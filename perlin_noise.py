@@ -63,21 +63,24 @@ def create_vectors_map(size, seed):
         seed=pseudo_random_generator(seed)
     return vector_array
 
-def convert_to_image(map_data, size, name):
+def convert_to_image(map_data, size, name, colors=None, start_color = (0, 0, 0), finish_color = (255, 255, 255)):
     """
     Function converts data to image
     """
     img = Image.new ("RGB", (size, size), (0, 0, 0))
     new_image = [0]*(size*size)
+    if colors != None:
+        first_element = list(colors.keys())[0]
     for i in range(size*size):
-        if map_data[i]<=0.35:
-            new_image[i] =(224,255,255)
-        elif map_data[i]<=0.45:
-            new_image[i] = (255,250,205)
-        elif map_data[i]<=0.8:
-            new_image[i] = (173,255,47)
+        if colors!=None:
+            current_color = colors[first_element]
+            for k in colors:
+                if map_data[i]<=k:
+                    current_color = colors[k]
+                    break
         else:
-            new_image[i] = (139,69,19)
+            current_color = (int(start_color[0]+(finish_color[0]-start_color[0])*map_data[i]), int(start_color[1]+(finish_color[1]-start_color[1])*map_data[i]), int(start_color[2]+(finish_color[2]-start_color[2])*map_data[i]))
+        new_image[i]=current_color
     img.putdata(new_image)
     img.save(name)
 
@@ -96,6 +99,7 @@ def smoothing(pixel1, pixel2, i, size_of_side):
     """
     Function smoothes point (linear interpolation + smooth stepping)
     """
+
     t = (i % size_of_side) / size_of_side
     return pixel1 + (pixel2 - pixel1) * t*t*t*(t*(t*6-15)+10)
 
@@ -140,45 +144,11 @@ def create_Perlin_noise(seed, size, size_of_side, number_of_octaves):
         array_of_maps[i] = create_octava_n(size, seed, size_of_side)
         size_of_side>>=1
     return sum_all_maps(size, array_of_maps)
-
-def convert_landscape_map_to_image(map_data, size, name, rivers_map=None):
-    """
-    Function converts Perlin noise (landscape) to image
-    """
-    img = Image.new ("RGB", (size, size), (0, 0, 0))
-    new_image = [0]*(size*size)
-    for i in range(size*size):
-        if map_data[i]<=0.35:
-            new_image[i] = (224,255,255)
-        elif rivers_map is not None and 0.5<=rivers_map[i]<=0.55:
-            new_image[i] = (224,255,255)
-        elif map_data[i]<=0.45:
-            new_image[i] = (255,250,205)
-        elif map_data[i]<=0.8:
-            new_image[i] = (173,255,47)
-        else:
-            new_image[i] = (139,69,19)
-    img.putdata(new_image)
-    img.save(name)
-
-def create_landscape_map(seed, size, size_of_side, number_of_octaves, rivers = False):
-    """
-    Creates perlin noise of landscape
-    """
-    map = create_Perlin_noise(seed, size, size_of_side, number_of_octaves)
-    if rivers:
-        seed = seed[::-1]
-        for i in range(1000):
-            seed=pseudo_random_generator(seed)
-        rivers_map = create_Perlin_noise(seed, size, size_of_side, number_of_octaves)
-        return (map, rivers_map)
-    return (map, None)
 ########
-size=2048
-seed="12345678"
-octaves=3
-size_of_side=512
+size=64
+seed="31941951"
+octaves=5
+size_of_side=32
 perlin_noise=create_Perlin_noise(seed, size, size_of_side, octaves)
-convert_to_image(perlin_noise, size, "perlin.png")
-maps = create_landscape_map(seed, size, size_of_side, octaves, True)
-convert_landscape_map_to_image(maps[0], size, "rivers1.png",maps[1] )
+colors = {0.1:(3, 255, 56),0.2:(0, 230, 51),0.3:(0, 206, 45),0.4:(0, 183, 40),0.5:(0, 159, 34),0.6:(0, 137, 29),0.7:(0, 115, 23),0.8:(0, 94, 18),0.9:(0, 73, 12),1:(1, 54, 6)}
+convert_to_image(perlin_noise, size, "perlin36.png", colors)
