@@ -4,6 +4,8 @@ Module generates Perman noise
 import math
 import numba
 from PIL import Image
+from flask import Flask, render_template
+
 def pseudo_random_generator(seed:str) -> str:
     """
     Function generates pseudo random numbers
@@ -145,10 +147,24 @@ def create_Perlin_noise(seed, size, size_of_side, number_of_octaves):
         size_of_side>>=1
     return sum_all_maps(size, array_of_maps)
 ########
-size=64
-seed="31941951"
-octaves=5
-size_of_side=32
-perlin_noise=create_Perlin_noise(seed, size, size_of_side, octaves)
-colors = {0.1:(3, 255, 56),0.2:(0, 230, 51),0.3:(0, 206, 45),0.4:(0, 183, 40),0.5:(0, 159, 34),0.6:(0, 137, 29),0.7:(0, 115, 23),0.8:(0, 94, 18),0.9:(0, 73, 12),1:(1, 54, 6)}
-convert_to_image(perlin_noise, size, "perlin36.png", colors)
+
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return render_template("main.html")
+
+if __name__ == "__main__":
+    size=64
+    seed="31941951"
+    octaves=5
+    size_of_side=32
+    perlin_noise=create_Perlin_noise(seed, size, size_of_side, octaves)
+    colors = {0.1:(3, 255, 56),0.2:(0, 230, 51),
+              0.3:(0, 206, 45),0.4:(0, 183, 40),
+              0.5:(0, 159, 34),0.6:(0, 137, 29),
+              0.7:(0, 115, 23),0.8:(0, 94, 18),
+              0.9:(0, 73, 12),1:(1, 54, 6)}
+    convert_to_image(perlin_noise, size, "perlin36.png", colors)
+
+    app.run(debug=True)

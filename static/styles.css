@@ -39,7 +39,7 @@ nav a {
 }
 
 .nav__3 {
-  color: black; 
+  color: black;
   border: 0px;
   background-color:#F2EBDC ;
   font-family: 'Oswald', sans-serif;
@@ -84,7 +84,7 @@ nav a {
   background-color: white;
   width: 350px;
   height: 540px;
-  background-color: 
+  background-color:
   #F2B705;
   border-radius: 10px;
   display: flex;
@@ -110,7 +110,7 @@ nav a {
 .button2 {
   margin-left: 100px;
   margin-right: 100px;
-  border: 3px solid 
+  border: 3px solid
   #CD321D;
   padding: 6px;
   margin-bottom: 15px;
@@ -166,7 +166,7 @@ nav a {
   font-weight: lighter;
   color: white;
   border: 0px;
-  background-color: 
+  background-color:
   #E39402;
   border-radius: 10px;
   padding: 7px;
@@ -214,7 +214,7 @@ input[type=range]::-webkit-slider-thumb {
   height: 16px;
   width: 16px;
   border-radius: 50%;
-  background: 
+  background:
   #CD321D;
   margin-top: -4px;
 }

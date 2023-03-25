@@ -3,6 +3,7 @@ import math
 import numba
 from PIL import Image
 from pygame.locals import *
+
 def palette_swap(surf, old_c, new_c, image):
         img_copy = pygame.Surface(image.get_size())
         img_copy.fill(new_c)
