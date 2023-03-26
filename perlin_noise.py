@@ -5,6 +5,8 @@ import math
 import numba
 from PIL import Image
 from flask import Flask, render_template
+import shutil
+
 
 def pseudo_random_generator(seed:str) -> str:
     """
@@ -154,7 +156,8 @@ app = Flask(__name__)
 def home():
     return render_template("main.html")
 
-if __name__ == "__main__":
+@app.route('/result', methods=['POST'])
+def result():
     size=64
     seed="31941951"
     octaves=5
@@ -165,6 +168,16 @@ if __name__ == "__main__":
               0.5:(0, 159, 34),0.6:(0, 137, 29),
               0.7:(0, 115, 23),0.8:(0, 94, 18),
               0.9:(0, 73, 12),1:(1, 54, 6)}
+
     convert_to_image(perlin_noise, size, "perlin36.png", colors)
+
+    file_path = 'perlin36.png'
+    dst_folder = 'static/perlin36.png'
+    shutil.move(file_path, dst_folder)
+
+    # Render the result page with the output
+    return render_template('result.html')
+
+if __name__ == "__main__":
 
     app.run(debug=True)
