@@ -67,7 +67,7 @@ def create_vectors_map(size, seed):
         seed=pseudo_random_generator(seed)
     return vector_array
 
-def convert_to_image(map_data, size, name, colors=None, start_color = (0, 0, 0), finish_color = (255, 255, 255)):
+def convert_to_image(map_data, size, name, colors={0.5:(0, 0, 0), 1:(255, 255, 255)}):
     """
     Function converts data to image
     """
@@ -82,11 +82,9 @@ def convert_to_image(map_data, size, name, colors=None, start_color = (0, 0, 0),
                 if map_data[i]<=k:
                     current_color = colors[k]
                     break
-        else:
-            current_color = (int(start_color[0]+(finish_color[0]-start_color[0])*map_data[i]), int(start_color[1]+(finish_color[1]-start_color[1])*map_data[i]), int(start_color[2]+(finish_color[2]-start_color[2])*map_data[i]))
         new_image[i]=current_color
     img.putdata(new_image)
-    img.save(name)
+    img.save('static/'+name)
 
 def recalculate_data(map_data, size):
     """
@@ -139,6 +137,31 @@ def sum_all_maps(size, array_of_maps):
             array_of_maps[0][i]+=array_of_maps[k][i]/(1<<k)
     return recalculate_data(array_of_maps[0], size)
 
+def convert_to_colors(string):
+    try:
+        string = string.replace(" ", "")
+        if string[0]=='g':
+            string = string[2:]
+            temporary = string.split('/')
+            start = tuple(int(i)for i in temporary[0][1:-1].split(','))
+            finish = tuple(int(i)for i in temporary[1][1:-1].split(','))
+            num = int(temporary[2])
+            colors_dictionary = dict()
+            for i in range(1, num+1):
+                colors_dictionary[i/num] = tuple([int(start[0] + (finish[0] - start[0]) * (i-1)/(num-1)), int(start[1] + (finish[1] - start[1]) * (i-1)/(num-1)), int(start[2] + (finish[2] - start[2]) * (i-1)/(num-1))])
+            return colors_dictionary
+        if string[0] == 'c':
+            string = string[2:]
+            temporary = string.split('/')
+            temporary.sort()
+            colors_dictionary = dict()
+            for i in temporary:
+                new_temp = i.split(':')
+                colors_dictionary[float(new_temp[0])] = tuple(int(i)for i in new_temp[1][1:-1].split(','))
+            return colors_dictionary
+    except:
+        return False
+
 def create_Perlin_noise(seed, size, size_of_side, number_of_octaves):
     """
     Function creates Perlin noise
@@ -149,35 +172,3 @@ def create_Perlin_noise(seed, size, size_of_side, number_of_octaves):
         size_of_side>>=1
     return sum_all_maps(size, array_of_maps)
 ########
-
-app = Flask(__name__)
-
-@app.route("/")
-def home():
-    return render_template("main.html")
-
-@app.route('/result', methods=['POST'])
-def result():
-    size=64
-    seed="31941951"
-    octaves=5
-    size_of_side=32
-    perlin_noise=create_Perlin_noise(seed, size, size_of_side, octaves)
-    colors = {0.1:(3, 255, 56),0.2:(0, 230, 51),
-              0.3:(0, 206, 45),0.4:(0, 183, 40),
-              0.5:(0, 159, 34),0.6:(0, 137, 29),
-              0.7:(0, 115, 23),0.8:(0, 94, 18),
-              0.9:(0, 73, 12),1:(1, 54, 6)}
-
-    convert_to_image(perlin_noise, size, "perlin36.png", colors)
-
-    file_path = 'perlin36.png'
-    dst_folder = 'static/perlin36.png'
-    shutil.move(file_path, dst_folder)
-
-    # Render the result page with the output
-    return render_template('result.html')
-
-if __name__ == "__main__":
-
-    app.run(debug=True)

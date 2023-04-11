@@ -3,7 +3,6 @@ import math
 import numba
 from PIL import Image
 from pygame.locals import *
-
 def palette_swap(surf, old_c, new_c, image):
         img_copy = pygame.Surface(image.get_size())
         img_copy.fill(new_c)
@@ -133,30 +132,25 @@ def create_Perlin_noise(seed, size, size_of_side, number_of_octaves):
         size_of_side>>=1
     return sum_all_maps(size, array_of_maps)
 
-def convert_landscape_map_to_image(map_data, size, name, rivers_map=None):
+def convert_landscape_map_to_image(map_data, size, name, max_height=1):
     """
     Function converts Perlin noise (landscape) to image
     """
     img = Image.new ("RGB", (size, size), (0, 0, 0))
     new_image = [0]*(size*size)
     for i in range(size*size):
-        new_image[i] = set_color(map_data[0][i], int(max(WATER_LVL, map_data[0][i])*max_height))
+        new_image[i] = set_color(map_data[i], int(max(WATER_LVL, map_data[i])*max_height), max_height)
+    print("here")
     img.putdata(new_image)
-    img.save(name)
+    img.save('static/'+name)
 
-def create_landscape_map(seed, size, size_of_side, number_of_octaves, rivers = False):
+def create_landscape_map(seed, size, size_of_side, number_of_octaves):
     """
     Creates perlin noise of landscape
     """
-    map = create_Perlin_noise(seed, size, size_of_side, number_of_octaves)
-    if rivers:
-        seed = seed[::-1]
-        for i in range(1000):
-            seed=pseudo_random_generator(seed)
-        rivers_map = create_Perlin_noise(seed, size, size_of_side, number_of_octaves)
-        return (map, rivers_map)
-    return (map, None)
-def set_color(h, k):
+    return create_Perlin_noise(seed, size, size_of_side, number_of_octaves)
+
+def set_color(h, k, max_height):
     grass_rgb = [(3, 255, 56),(0, 230, 51),(0, 206, 45),(0, 183, 40),(0, 159, 34),(0, 137, 29),(0, 115, 23),(0, 94, 18),(0, 73, 12),(1, 54, 6)]
     water_rgb = [(0, 46, 62),(1, 60, 78),(2, 75, 95),(3, 90, 111),(4, 106, 128),(5, 122, 145),(7, 139, 162),(11, 156, 178),(16, 173, 195),(23, 191, 211)]
     mountain_rgb = [(124, 115, 104),(110, 107, 95),(97, 98, 88),(84, 90, 81),(73, 81, 75),(63, 72, 69),(55, 63, 62),(47, 54, 55),(40, 46, 47), (34, 37, 39)]
@@ -177,34 +171,42 @@ def set_color(h, k):
 
 def make_darker(color, delta):
     return (max(color[0]-delta, 0), max(color[1]-delta, 0), max(color[2]-delta, 0))
-def draw_image(arrays, name):
-        screensize = size*width
-        pygame.init()
-        screen = pygame.display.set_mode((screensize, screensize), 0, 32)
-        display = pygame.Surface((screensize, screensize))
-        img=pygame.image.load(f'tiles/{height}x{width}.png').convert()
-        array = arrays[0]
-        river = array[1]
-        img.set_colorkey((255, 255, 255))
-        display.fill((255, 255, 255))
-        for i in range(len(array)):
-            x=i%size
-            y=i//size
-            if x != size-1 and y!=size-1:
-                k = int(max(WATER_LVL, min(array[i+1], array[i], array[i+size]))*max_height)
-            else:
-                k=1
-            while k<=int(max(WATER_LVL, array[i])*max_height):
-                    color = set_color(array[i], k)
-                    tile_img = palette_swap(img, (0, 255, 42), color, img)
-                    tile_img = palette_swap(tile_img, (0, 0, 0), make_darker(color, 15), img)
-                    tile_img = palette_swap(tile_img, (255, 0, 0), make_darker(color, 5), img)
-                    tile_img.set_colorkey((255, 255, 255))
-                    display.blit(tile_img, ((x-y)*width/2-width/2+screensize/2, height/2*(x+y)+screensize/2-k+1))
-                    k+=1
-        screen.blit(pygame.transform.scale(display, screen.get_size()), (0,0))
-        pygame.display.update()
-        pygame.image.save(screen, name)
+
+def draw_image_2(array, name, size, max_height):
+    screensize = size*width
+    img = Image.new ("RGBA", (screensize, screensize))
+    new_image = [(255, 255, 255, 0)]*(screensize*screensize)
+    tile_img = Image.open(f'tiles/{height}x{width}.png')
+    for i in range(size*size):
+        x=i%size
+        y=i//size
+        if x != size-1 and y!=size-1:
+            k = int(max(WATER_LVL, min(array[i+1], array[i], array[i+size]))*max_height)
+        else:
+            k=1
+        while k<=int(max(WATER_LVL, array[i])*max_height):
+            for y_p in range(height):
+                for x_p in range(width):
+                    coor = int((x-y)*width/2-width/2+screensize/2+x_p+(height/2*(x+y)+screensize/2-k+1+y_p)*screensize)
+                    if coor<0 or coor>=screensize*screensize:
+                        break
+                    color = set_color(array[i], k, max_height)
+                    color_tile = tile_img.getpixel((x_p, y_p))
+                    if color_tile == 1:
+                        color_tile = (0, 255, 42)
+                    elif color_tile == 2:
+                        color_tile = (0, 0, 0)
+                    elif color_tile == 3:
+                        color_tile = (255, 0, 0)
+                    if color_tile == (0, 0, 0):
+                        new_image[coor] = make_darker(color, 15)
+                    elif color_tile == (255, 0, 0):
+                        new_image[coor] = make_darker(color, 5)
+                    elif color_tile == (0, 255, 42):
+                        new_image[coor] = color
+            k+=1
+    img.putdata(new_image)
+    img.save('static/'+name)
 #--------------------------------
 WATER_LVL = 0.125
 SAND_LVL = 0.15625
@@ -214,12 +216,12 @@ MOUNTAIN_LVL = 0.6875
 height = 2
 width = 4
 #--------------------------------
-size = 256
-size_of_side = 128
-max_height = 256
-octava=5
-seed = "11211234"
+# size = 256
+# size_of_side = 128
+# max_height = 256
+# octava=5
+# seed = "11211234"
 #--------------------------------
-map = create_landscape_map(seed, size, size_of_side, octava, False)
-draw_image(map, "landscape141.png")
-convert_landscape_map_to_image(map, size, "landscape17.png")
+# map = create_landscape_map(seed, size, size_of_side, octava)
+# draw_image(map, "landscape13214.png")
+# convert_landscape_map_to_image(map, size, "landscape17.png", max_height=100)
